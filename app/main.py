@@ -35,7 +35,7 @@ def get_config():
 @app.get("/predict")
 def make_prediction():
     try:
-        df = pd.read_csv("data/data.csv")  # Load recent data
+        df = pd.read_csv("data/stock_data.csv")  # Load recent data
         latest_data = df.groupby("symbol").tail(1)  # Get last row per stock
 
         stock_input = {
