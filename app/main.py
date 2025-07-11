@@ -3,6 +3,9 @@ from contextlib import asynccontextmanager
 from app.scheduler import fetch_loop
 from app.config import settings
 import asyncio
+from app.model_runner import predict
+import pandas as pd
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,3 +30,24 @@ def get_config():
         "interval": settings.fetch_interval,
         "threshold": settings.retrain_threshold
     }
+
+
+@app.get("/predict")
+def make_prediction():
+    try:
+        df = pd.read_csv("data/data.csv")  # Load recent data
+        latest_data = df.groupby("symbol").tail(1)  # Get last row per stock
+
+        stock_input = {
+            row["symbol"]: {
+                "price": row["price"],
+                "volume": row["volume"],
+                "time": row["time"]
+            }
+            for _, row in latest_data.iterrows()
+        }
+
+        result = predict(stock_input)  # Call fake model
+        return result
+    except Exception as e:
+        return {"error": str(e)}
