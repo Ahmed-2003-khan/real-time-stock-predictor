@@ -1,22 +1,18 @@
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from app.scheduler import fetch_loop
 from app.config import settings
-import asyncio
+from app.scheduler import fetch_loop
 from app.model_runner import predict
+import asyncio
 import pandas as pd
-from app.evaluator import compute_metrics
-
-
+from app.evaluator import calculate_metrics
+from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 👇 Start background task
+    # Startup logic
     task = asyncio.create_task(fetch_loop())
-    
-    yield  # 👈 Control passes to the app here
-
-    # (Optional) Cancel background task on shutdown
+    yield
+    # Shutdown logic (optional)
     task.cancel()
 
 app = FastAPI(lifespan=lifespan)
@@ -33,12 +29,11 @@ def get_config():
         "threshold": settings.retrain_threshold
     }
 
-
 @app.get("/predict")
 def make_prediction():
     try:
-        df = pd.read_csv("data/stock_data.csv")  # Load recent data
-        latest_data = df.groupby("symbol").tail(1)  # Get last row per stock
+        df = pd.read_csv("data/data.csv")
+        latest_data = df.groupby("symbol").tail(1)
 
         stock_input = {
             row["symbol"]: {
@@ -49,11 +44,14 @@ def make_prediction():
             for _, row in latest_data.iterrows()
         }
 
-        result = predict(stock_input)  # Call fake model
+        result = predict(stock_input)
         return result
+
     except Exception as e:
         return {"error": str(e)}
     
 @app.get("/metrics")
 def get_metrics():
-    return compute_metrics()
+    result = calculate_metrics("logs/predictions.csv", window_size=10)
+    return result
+

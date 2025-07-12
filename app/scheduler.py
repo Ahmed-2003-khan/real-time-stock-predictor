@@ -1,23 +1,35 @@
 import asyncio
-import csv
-import os
-from app.fetch_data import fetch_latest_prices
+import yfinance as yf
+import pandas as pd
+from datetime import datetime
 from app.config import settings
-
-DATA_FILE = "data/stock_data.csv"
 
 async def fetch_loop():
     while True:
-        prices = fetch_latest_prices()
-        print("Fetched:", prices)
-
-        # Save to CSV
-        file_exists = os.path.isfile(DATA_FILE)
-        with open(DATA_FILE, "a", newline="") as f:
-            writer = csv.writer(f)
-            if not file_exists:
-                writer.writerow(["symbol", "price", "volume", "time"])
-            for symbol, info in prices.items():
-                writer.writerow([symbol, info["price"], info["volume"], info["time"]])
+        data = {}
+        for symbol in settings.symbols:
+            ticker = yf.Ticker(symbol)
+            try:
+                info = ticker.info
+                data[symbol] = {
+                    "price": info.get("currentPrice"),
+                    "volume": info.get("volume"),
+                    "time": datetime.utcnow().isoformat()
+                }
+            except Exception as e:
+                print(f"Error fetching {symbol}: {e}")
+        
+        if data:
+            df = pd.DataFrame([
+                {
+                    "symbol": sym,
+                    "price": val["price"],
+                    "volume": val["volume"],
+                    "time": val["time"]
+                }
+                for sym, val in data.items()
+            ])
+            df.to_csv("data/data.csv", mode="a", header=not pd.io.common.file_exists("data/data.csv"), index=False)
+            print("Fetched:", data)
         
         await asyncio.sleep(settings.fetch_interval)
