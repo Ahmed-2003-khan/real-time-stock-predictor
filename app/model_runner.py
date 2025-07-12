@@ -1,6 +1,7 @@
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from app.config import settings
+import csv
 
 def load_model():
     # Placeholder: Simulate loading model
@@ -22,11 +23,21 @@ def predict(stock_data: dict):
     }
     """
     prediction = {}
-    for symbol, data in stock_data.items():
-        actual_price = data["price"]
-        predicted_price = actual_price + random.uniform(-1.5, 1.5)  # Random noise
-        prediction[symbol] = {
-            "predicted": round(predicted_price, 2),
-            "time": datetime.utcnow().isoformat()
-        }
+    now = datetime.now(timezone.utc).isoformat()
+
+    with open("data/predictions.csv", "a", newline="") as f:
+        writer = csv.writer(f)
+
+        for symbol, data in stock_data.items():
+            actual_price = data["price"]
+            predicted_price = actual_price + random.uniform(-1.5, 1.5)
+
+            prediction[symbol] = {
+                "predicted": round(predicted_price, 2),
+                "time": now
+            }
+
+            # Log: symbol, prediction time, actual, predicted
+            writer.writerow([symbol, now, actual_price, round(predicted_price, 2)])
+
     return prediction

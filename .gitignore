@@ -9,5 +9,7 @@ __pycache__/
 .env
 
 # Ignore local data files
-data/
+data/*
+!data/predictions.csv
+
 *.pkl
