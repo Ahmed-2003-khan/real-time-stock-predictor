@@ -3,14 +3,18 @@ from datetime import datetime
 from app.config import settings
 import pandas as pd
 import os
+from app.evaluator import calculate_metrics, save_metrics
+
 
 def load_model():
-    # Placeholder model
+    # Placeholder for real model loading later
     return "dummy_model"
+
 
 def predict(stock_data: dict):
     """
     Simulates predictions and saves them with timestamps.
+    Also evaluates performance and saves metrics.
     """
     prediction = {}
     rows = []
@@ -31,9 +35,16 @@ def predict(stock_data: dict):
             "time": datetime.utcnow().isoformat()
         })
 
-    # Save to CSV
+    # Save predictions to CSV
     pred_path = "logs/predictions.csv"
     df = pd.DataFrame(rows)
     df.to_csv(pred_path, mode="a", header=not os.path.exists(pred_path), index=False)
 
-    return prediction
+    # Evaluate metrics and save
+    metrics = calculate_metrics(pred_path, window_size=10)
+    save_metrics(metrics)
+
+    return {
+        "prediction": prediction,
+        "metrics": metrics
+    }

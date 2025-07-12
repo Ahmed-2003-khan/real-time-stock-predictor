@@ -55,3 +55,13 @@ def get_metrics():
     result = calculate_metrics("logs/predictions.csv", window_size=10)
     return result
 
+
+@app.get("/metrics/history")
+def get_metrics_history():
+    try:
+        df = pd.read_csv("logs/metrics.csv")
+        return df.to_dict(orient="records")
+    except Exception as e:
+        return {"error": str(e)}
+
+
