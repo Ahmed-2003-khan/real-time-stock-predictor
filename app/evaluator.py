@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, root_mean_squared_error
 
 def compute_metrics():
     try:
@@ -12,7 +12,7 @@ def compute_metrics():
         predicted = latest["predicted"]
 
         mae = mean_absolute_error(actual, predicted)
-        rmse = mean_squared_error(actual, predicted, squared=False)
+        rmse = root_mean_squared_error(actual, predicted)
         mape = (abs((actual - predicted) / actual)).mean() * 100
 
         return {
