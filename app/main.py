@@ -5,6 +5,8 @@ from app.config import settings
 import asyncio
 from app.model_runner import predict
 import pandas as pd
+from app.evaluator import compute_metrics
+
 
 
 @asynccontextmanager
@@ -51,3 +53,7 @@ def make_prediction():
         return result
     except Exception as e:
         return {"error": str(e)}
+    
+@app.get("/metrics")
+def get_metrics():
+    return compute_metrics()
