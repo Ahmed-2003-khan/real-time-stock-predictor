@@ -3,6 +3,7 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 from app.config import settings
+from app.model_runner import predict  # ✅ Import prediction function
 
 async def fetch_loop():
     while True:
@@ -31,5 +32,9 @@ async def fetch_loop():
             ])
             df.to_csv("data/data.csv", mode="a", header=not pd.io.common.file_exists("data/data.csv"), index=False)
             print("Fetched:", data)
-        
+
+            # ✅ Call forecast prediction after data is fetched
+            forecast = predict(data, steps=10, interval=60)
+            print("Forecast:", forecast)
+
         await asyncio.sleep(settings.fetch_interval)

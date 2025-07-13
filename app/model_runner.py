@@ -1,50 +1,54 @@
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.config import settings
 import pandas as pd
 import os
 from app.evaluator import calculate_metrics, save_metrics
 
-
+# Dummy model for simulation
 def load_model():
-    # Placeholder for real model loading later
-    return "dummy_model"
+    return "dummy_forecast_model"
 
-
-def predict(stock_data: dict):
+def predict(stock_data: dict, steps: int = 10, interval: int = 60):
     """
-    Simulates predictions and saves them with timestamps.
-    Also evaluates performance and saves metrics.
+    Simulate N-step forecasting for each stock symbol.
+    steps: how many future points to predict
+    interval: seconds between each step (default: 1 min = 60s)
     """
-    prediction = {}
+    forecast = {}
     rows = []
 
+    now = datetime.utcnow()
+
     for symbol, data in stock_data.items():
-        actual_price = data["price"]
-        predicted_price = actual_price + random.uniform(-1.5, 1.5)
-        prediction[symbol] = {
-            "predicted": round(predicted_price, 2),
-            "actual": round(actual_price, 2),
-            "time": datetime.utcnow().isoformat()
-        }
+        base_price = data["price"]
+        symbol_forecast = []
 
-        rows.append({
-            "symbol": symbol,
-            "predicted": round(predicted_price, 2),
-            "actual": round(actual_price, 2),
-            "time": datetime.utcnow().isoformat()
-        })
+        for step in range(steps):
+            forecast_time = now + timedelta(seconds=(step + 1) * interval)
+            predicted_price = base_price + random.uniform(-2.0, 2.0)
+            symbol_forecast.append({
+                "time": forecast_time.isoformat(),
+                "predicted": round(predicted_price, 2),
+                "actual": None,
+                "symbol": symbol
+            })
 
-    # Save predictions to CSV
+            rows.append({
+                "symbol": symbol,
+                "time": forecast_time.isoformat(),
+                "predicted": round(predicted_price, 2),
+                "actual": None
+            })
+
+        forecast[symbol] = symbol_forecast
+
+    # Save to CSV
     pred_path = "logs/predictions.csv"
     df = pd.DataFrame(rows)
-    df.to_csv(pred_path, mode="a", header=not os.path.exists(pred_path), index=False)
 
-    # Evaluate metrics and save
-    metrics = calculate_metrics(pred_path, window_size=10)
-    save_metrics(metrics)
+    # If file doesn't exist, write with header. Else, append without header
+    write_header = not os.path.exists(pred_path)
+    df.to_csv(pred_path, mode="a", header=write_header, index=False)
 
-    return {
-        "prediction": prediction,
-        "metrics": metrics
-    }
+    return forecast

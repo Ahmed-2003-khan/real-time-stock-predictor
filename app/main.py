@@ -6,6 +6,7 @@ import asyncio
 import pandas as pd
 from app.evaluator import calculate_metrics
 from contextlib import asynccontextmanager
+import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,5 +64,35 @@ def get_metrics_history():
         return df.to_dict(orient="records")
     except Exception as e:
         return {"error": str(e)}
+
+
+@app.get("/forecast")
+def get_latest_forecast():
+    pred_path = "logs/predictions.csv"
+
+    if not os.path.exists(pred_path):
+        return {"message": "No forecast data available yet."}
+
+    try:
+        df = pd.read_csv(pred_path)
+
+        # Keep only latest 20 rows
+        latest = df.sort_values(by="time", ascending=False).head(20)
+
+        result = []
+        for _, row in latest.iterrows():
+            result.append({
+                "symbol": row["symbol"],
+                "time": row["time"],
+                "predicted": float(row["predicted"]) if pd.notna(row["predicted"]) else None,
+                "actual": float(row["actual"]) if pd.notna(row.get("actual", None)) else None
+            })
+
+        return {"forecasts": result}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
 
 
