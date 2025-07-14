@@ -1,54 +1,50 @@
-import random
 from datetime import datetime, timedelta
-from app.config import settings
 import pandas as pd
 import os
-from app.evaluator import calculate_metrics, save_metrics
+from app.model_utils import load_forecast_model, forecast_next_n_prices
+from app.config import settings
 
-# Dummy model for simulation
-def load_model():
-    return "dummy_forecast_model"
+PRED_PATH = "logs/predictions.csv"
+OHLC_PATH = "data/ohlc_data.csv"
 
-def predict(stock_data: dict, steps: int = 10, interval: int = 60):
-    """
-    Simulate N-step forecasting for each stock symbol.
-    steps: how many future points to predict
-    interval: seconds between each step (default: 1 min = 60s)
-    """
-    forecast = {}
-    rows = []
+def predict(n_steps=10):
+    if not os.path.exists(OHLC_PATH):
+        return {}
 
-    now = datetime.utcnow()
+    df = pd.read_csv(OHLC_PATH, parse_dates=["time"])
 
-    for symbol, data in stock_data.items():
-        base_price = data["price"]
-        symbol_forecast = []
+    # Focus on AAPL only (as agreed)
+    symbol = "AAPL"
+    df_symbol = df[df["symbol"] == symbol].sort_values(by="time")
 
-        for step in range(steps):
-            forecast_time = now + timedelta(seconds=(step + 1) * interval)
-            predicted_price = base_price + random.uniform(-2.0, 2.0)
-            symbol_forecast.append({
-                "time": forecast_time.isoformat(),
-                "predicted": round(predicted_price, 2),
-                "actual": None,
-                "symbol": symbol
-            })
+    if len(df_symbol) < 30:
+        print("⚠️ Not enough data to make forecast")
+        return {"message": "Not enough data to forecast."}
 
-            rows.append({
+    # Get last 30 close prices
+    recent_closes = df_symbol["price"].values[-30:]
+
+    try:
+        model, scaler = load_forecast_model()
+        predictions = forecast_next_n_prices(model, scaler, recent_closes, n_steps=n_steps)
+
+        now = datetime.utcnow()
+        forecast_data = []
+
+        for i, pred in enumerate(predictions):
+            forecast_time = now + timedelta(minutes=(i + 1) * settings.aggregation_minutes)
+            forecast_data.append({
                 "symbol": symbol,
                 "time": forecast_time.isoformat(),
-                "predicted": round(predicted_price, 2),
+                "predicted": round(float(pred), 2),
                 "actual": None
             })
 
-        forecast[symbol] = symbol_forecast
+        # Save to CSV
+        df_forecast = pd.DataFrame(forecast_data)
+        df_forecast.to_csv(PRED_PATH, mode="a", header=not os.path.exists(PRED_PATH), index=False)
 
-    # Save to CSV
-    pred_path = "logs/predictions.csv"
-    df = pd.DataFrame(rows)
+        return {symbol: forecast_data}
 
-    # If file doesn't exist, write with header. Else, append without header
-    write_header = not os.path.exists(pred_path)
-    df.to_csv(pred_path, mode="a", header=write_header, index=False)
-
-    return forecast
+    except Exception as e:
+        return {"error": str(e)}

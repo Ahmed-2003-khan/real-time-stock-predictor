@@ -8,9 +8,11 @@ from app.evaluator import calculate_metrics
 from contextlib import asynccontextmanager
 import os
 
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic
+    # Startup logi
     task = asyncio.create_task(fetch_loop())
     yield
     # Shutdown logic (optional)
@@ -33,19 +35,7 @@ def get_config():
 @app.get("/predict")
 def make_prediction():
     try:
-        df = pd.read_csv("data/data.csv")
-        latest_data = df.groupby("symbol").tail(1)
-
-        stock_input = {
-            row["symbol"]: {
-                "price": row["price"],
-                "volume": row["volume"],
-                "time": row["time"]
-            }
-            for _, row in latest_data.iterrows()
-        }
-
-        result = predict(stock_input)
+        result = predict()
         return result
 
     except Exception as e:

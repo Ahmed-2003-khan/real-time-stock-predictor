@@ -13,3 +13,7 @@ data/*
 !data/predictions.csv
 
 *.pkl
+
+models/
+
+frontend/
