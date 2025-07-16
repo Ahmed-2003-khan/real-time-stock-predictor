@@ -1,12 +1,10 @@
 services:
   - type: web
-    name: stock-backend
+    name: real-time-stock-api
     env: python
     region: oregon
     plan: free
-    runtime: python
-    repo: https://github.com/Ahmed-2003-khan/real-time-stock-predictor
     branch: main
-    rootDir: app  # 👈 VERY IMPORTANT: this tells Render to look inside /app
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host=0.0.0.0 --port=8000
+    startCommand: python main.py
+    rootDir: app
