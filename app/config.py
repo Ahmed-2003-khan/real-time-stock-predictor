@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 from typing import List
 
-class AppSettings(BaseSettings):
+class Settings(BaseSettings):
     symbols: List[str] = ["AAPL"]
     fetch_interval: int = 900  # 15 minutes
     retrain_threshold: float = 0.1
