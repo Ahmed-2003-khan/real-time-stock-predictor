@@ -8,13 +8,9 @@ __pycache__/
 # Ignore secrets
 .env
 
-# Ignore local data files
-data/*
-!data/predictions.csv
 
 *.pkl
 
 
 frontend/
 
-logs/
