@@ -5,6 +5,6 @@ services:
     region: oregon
     plan: free
     branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
     rootDir: app
+    buildCommand: pip install -r app/requirements.txt
+    startCommand: python main.py
