@@ -7,7 +7,7 @@ import pandas as pd
 from app.evaluator import calculate_metrics
 from contextlib import asynccontextmanager
 import os
-
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -19,6 +19,15 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 def root():
@@ -67,7 +76,7 @@ def get_latest_forecast():
         df = pd.read_csv(pred_path)
 
         # Keep only latest 20 rows
-        latest = df.sort_values(by="time", ascending=False).head(20)
+        latest = df.sort_values(by="time", ascending=True).head(10)
 
         result = []
         for _, row in latest.iterrows():
@@ -82,6 +91,31 @@ def get_latest_forecast():
 
     except Exception as e:
         return {"error": str(e)}
+    
+@app.get("/actuals")
+def get_actuals():
+    path = "data/raw_data.csv"
+
+    if not os.path.exists(path):
+        return {"message": "No actual data yet."}
+
+    try:
+        df = pd.read_csv(path)
+        df = df[df["symbol"] == "AAPL"].sort_values(by="time", ascending=False).head(25)
+        df = df.sort_values(by="time")
+
+        result = []
+        for _, row in df.iterrows():
+            result.append({
+                "time": row["time"],
+                "actual": float(row["price"])
+            })
+
+        return {"actuals": result}
+
+    except Exception as e:
+        return {"error": str(e)}
+
 
 
 
