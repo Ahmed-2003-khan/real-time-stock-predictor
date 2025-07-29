@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 from app.config import settings
 from app.scheduler import fetch_loop
@@ -118,5 +119,7 @@ def get_actuals():
 
 
 
-
+@app.on_event("startup")
+async def start_scheduler():
+    asyncio.create_task(fetch_loop())
 
