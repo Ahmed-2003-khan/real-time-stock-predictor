@@ -46,3 +46,6 @@ async def fetch_loop():
             predict()
 
         await asyncio.sleep(settings.fetch_interval)
+
+if __name__ == "__main__":
+    asyncio.run(fetch_loop())
