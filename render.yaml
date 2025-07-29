@@ -8,13 +8,3 @@ services:
     rootDir: app
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port 8000
-
-  - type: worker
-    name: real-time-stock-scheduler
-    env: python
-    region: oregon
-    plan: free
-    branch: main
-    rootDir: app
-    buildCommand: pip install -r requirements.txt
-    startCommand: python scheduler.py
